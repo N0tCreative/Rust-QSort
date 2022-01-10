@@ -6,13 +6,13 @@ fn main() {
         vector[100-(i as usize)]=i;
     }
     //println!("inital {:?}",vector);
-    let sorted =qsort(vector, 0);
+    let sorted =merge_sort(vector, 0);
     for val in sorted {
         print!("{},",val);
     }
 }
 
-fn qsort(vector: Vec<i32>, num_depth: i8)->Vec<i32> {
+fn merge_sort(vector: Vec<i32>, num_additional_threads: i8)->Vec<i32> {
     //if length is 1 then vector is sorted
     if vector.len() == 1{
         return vector;
@@ -37,18 +37,29 @@ fn qsort(vector: Vec<i32>, num_depth: i8)->Vec<i32> {
     }
 
     //sort both sides
+    
+    //determines how many threads each half should create
+    let right_additional_threads = num_additional_threads /2;
+    let left_additional_threads;
+    //makes sure left additional threads is never less than zero
+    if num_additional_threads <=right_additional_threads +1 {
+        left_additional_threads =0;
+    } else {
+        left_additional_threads =num_additional_threads -right_additional_threads -1;
+    }
+
     let left;
     let right;
     let handler;
-    //if the depth is low enough spawn a new thread for one of the halfs
-    if num_depth < 2 {
-        handler =std::thread::spawn(move || {qsort(left_vect, num_depth +1)}); //spawn new thread
-        right = qsort(right_vect, num_depth +1); //do right side
+    //if more threads are asked for then spawn a new thread for one of the halfs
+    if num_additional_threads > 0 {
+        handler =std::thread::spawn(move || {merge_sort(left_vect, left_additional_threads)}); //spawn new thread
+        right = merge_sort(right_vect, right_additional_threads); //do right side
         left = handler.join().unwrap(); //join the left side
         
     } else{
-        left = qsort(left_vect, num_depth +1); //do the left side
-        right = qsort(right_vect, num_depth +1); //do the right side
+        left = merge_sort(left_vect, left_additional_threads); //do the left side
+        right = merge_sort(right_vect, right_additional_threads); //do the right side
     }
     
     
@@ -85,3 +96,4 @@ fn qsort(vector: Vec<i32>, num_depth: i8)->Vec<i32> {
 
     return sorted;
 }
+
